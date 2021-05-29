@@ -1,0 +1,190 @@
+<!-- 修改静态文件加载方式 -->
+{% load static %}
+<!DOCTYPE html>
+<!-- 网站主语言 -->
+<html lang="zh-cn">
+<head>
+    <!-- 网站采用的字符编码 -->
+    <meta charset="utf-8">
+    <!-- 网站标题 -->
+    <title>首页</title>
+    <!-- 引入bootstrap的css文件 -->
+    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
+    <!-- 引入monikai.css -->
+    <link rel="stylesheet" href="{% static 'md_css/monokai.css' %}">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+    <!--导入css-->
+    <link rel="stylesheet" href="{% static 'common/common.css' %}">
+    <link rel="stylesheet" href="{% static 'common/jquery.pagination.css' %}">
+    <!-- 引入vuejs -->
+    <script type="text/javascript" src="{% static 'js/vue-2.5.16.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/axios-0.18.0.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/jquery-1.12.4.min.js' %}"></script>
+</head>
+
+<body>
+<div id="app" >
+<!-- 定义导航栏 -->
+<!--<nav class="navbar navbar-expand-lg navbar-dark bg-dark">  -->
+<nav class="navbar navbar-expand-lg navbar-dark  "style="background:#f0c674">
+<!--style="position:fixed; z-index:98; width:100%; top:0px; left:0px; height: auto;"TODO:主页菜单栏固定 -->
+
+    <div class="container"  >
+        <!-- 导航栏商标 -->
+        <div>
+        <!--    <a class="navbar-brand" href="./index.html">个人博客</a> -->
+            <a class="navbar-brand" href="{% url 'home:index' %}">个人博客</a>
+        </div>
+        <!-- 分类 -->
+        <div class="collapse navbar-collapse">
+            <div>
+                <ul class="nav navbar-nav">
+                <!--遍历显示选中文类的文章，href='/?var=x'查询字符串功能   传入categories->试cat_id-html通过浏览器的get请求通过url返回给浏览器--后台判断出selected--传给前端判断给出active-->
+                    {% for cat in categories %}
+                        <!--判断筛选语句 -->
+                        {% if cat.id == selected_category.id %}
+                            <li class="nav-item active">
+                                <a class="nav-link mr-2" href="/?cat_id={{ cat.id }}">{{ cat.title }}</a>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                 <a class="nav-link mr-2" href="/?cat_id={{ cat.id }}">{{ cat.title }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                     <li class="nav-item active">
+                                <a class="nav-link mr-2" href="admin/">*管理入口*</a>
+                     </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!--登录/个人中心-->
+    <div class="navbar-collapse">
+            <ul class="nav navbar-nav">
+                <!-- 如果用户已经登录，则显示用户名下拉框 -->
+                <li class="nav-item dropdown" v-if="is_login">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" @click="show_menu_click">[[username]]</a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdown" style="display: block" v-show="show_menu">
+                        <a class="dropdown-item" href="{% url 'users:publish' %}">写文章</a>
+                        <a class="dropdown-item" href='{% url 'users:usercenter' %}'>个人信息</a>
+                        <a class="dropdown-item" href='{% url 'users:logout' %}'>退出登录</a>
+                    </div>
+                </li>
+    <!-- 如果用户未登录，则显示登录按钮 TODO:修不好的首页登录bug  -->
+                <li class="nav-item" v-if="" style="z-index: 99">
+                    <a class="nav-link" href="{% url 'users:login' %}">登录</a>
+                </li>
+            </ul>
+        </div>
+</nav>
+
+<!-- content -->
+<div class="container">
+    <!-- 列表循环-显示板块文章概述内容 TODO:添加‘所有‘板块 -->
+    {% for article in articles %}
+        <div class="row mt-2">
+            <!-- 文章内容 -->
+            <!-- 标题图 TODO:缺图测试-->
+            <div class="col-3" style="max-height: 250px;min-height: 180px">
+                {% if article.avatar %}
+                    <img src="{{ article.avatar.url }}" alt="avatar" style="max-width:100%; border-radius: 20px; max-height: 250px;min-height: 160px;min-width: 190px">
+                {% else %}
+                    <img src="{% static 'img/no_avatar.png' %}" alt="avatar" style="max-width:100%; border-radius: 20px">
+                {% endif %}
+            </div>
+            <div class="col">
+                <!-- 栏目 -->
+                <a  role="button" href="#" class="btn btn-sm mb-2 btn-warning">{{ article.category.title }}</a>
+            <!-- 标签 -->
+                <span>
+                        <a href="#" class="badge badge-secondary">{{ article.tags }}</a>
+                </span>
+                <!-- 标题 -->
+                <h4>
+                    <!--跳转时article.id给到views从而使得details.html里的article得到锁定 -->
+                    <b><a href="{% url 'home:detail' %}?article_id={{ article.id }}" style="color: black;">{{ article.title }}</a></b>
+                </h4>
+                <!-- 摘要 -->
+                <div>
+                    <p style="color: gray;">
+                        {{ article.summary }}
+                    </p>
+                </div>
+                <!-- 注脚 -->
+                <p>
+                    <!-- 查看、评论、时间 -->
+                    <span><i class="fas fa-eye" style="color: lightskyblue;"></i>{{ article.total_views }}&nbsp;&nbsp;&nbsp;</span>
+                    <span><i class="fas fa-comments" style="color: yellowgreen;"></i>{{ article.total_comments }}&nbsp;&nbsp;&nbsp;</span>
+                    <span><i class="fas fa-clock" style="color: pink;"></i>{{ article.created_time|date }}</span>
+                </p>
+            </div>
+            <hr style="width: 100%;"/>
+    </div>
+    {% endfor %}
+
+
+
+
+
+
+
+    <!-- 页码导航 -->
+    <div class="pagenation" style="text-align: center">
+        <div id="pagination" class="page"></div>
+    </div>
+</div>
+<!-- 引入live2d相关，TODO:尝试引入live2d看板娘 -->
+<!--引入css文件-->
+<link rel="stylesheet" href="{%static 'js/live2d/css/live2d.css'%}" />
+
+<!--引入js文件-->
+
+
+<!-- 看板娘：添加canvas  https://blog.csdn.net/qq_26024785/article/details/100796732  -->
+<div id="landlord">
+    <div class="message" style="opacity:0"></div>
+    <canvas id="live2d" width="280" height="250" class="live2d"></canvas>
+    <div class="hide-button">隐藏</div>
+
+</div>
+<!-- Footer  bg-dark-->
+<!--style="width:100%;height:50px;position:absolute;bottom:0px;left:0px;background: #333"-->
+<footer class="py-3 modal-footer" id="footer" style="background:#f0c674"> -->
+    <div class="container">
+        <h5 class="m-0 text-center text-light">JeffreyD的bug博物馆</h5>
+    </div>
+</footer>
+</div>
+
+<!-- 引入js -->
+<script type="text/javascript" src="{% static 'js/host.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/common.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/index.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/jquery.pagination.min.js' %}"></script>
+<script type="text/javascript">
+    $(function () {
+        $('#pagination').pagination({
+            currentPage: {{page_num}},
+            totalPage: {{total_page}},
+            callback:function (current) {
+<!--TODO:通过查询字符串分页跳转-->
+                {# ?cat_id=3&page_size=10&page_num=2 #}
+                location.href = '/?cat_id={{selected_category.id}}&page_size={{ page_size }}&page_num='+current;
+            }
+        })
+    });
+</script>
+
+
+<script type="text/javascript">
+    var message_Path = '{%static 'js/live2d/message.json' %}';
+    var home_Path = '{% url 'home:index' %}/'               //此处可以修改为你的域名，必须带斜杠
+</script>
+<script type="text/javascript" src="{%static 'js/live2d/js/live2d.js'%}"></script>
+<script type="text/javascript" src="{%static 'js/live2d/js/message.js'%}"></script>
+<script type="text/javascript">
+    loadlive2d("live2d", "{%static 'js/live2d/model/tia/model.json'%}");
+</script>
+</body>
+</html>
